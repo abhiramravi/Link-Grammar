@@ -17,6 +17,7 @@ C_SRCS += \
 ../src/extract-links.c \
 ../src/fast-match.c \
 ../src/idiom.c \
+../src/link_test.c \
 ../src/linkset.c \
 ../src/massage.c \
 ../src/parse.c \
@@ -50,6 +51,7 @@ OBJS += \
 ./src/extract-links.o \
 ./src/fast-match.o \
 ./src/idiom.o \
+./src/link_test.o \
 ./src/linkset.o \
 ./src/massage.o \
 ./src/parse.o \
@@ -83,6 +85,7 @@ C_DEPS += \
 ./src/extract-links.d \
 ./src/fast-match.d \
 ./src/idiom.d \
+./src/link_test.d \
 ./src/linkset.d \
 ./src/massage.d \
 ./src/parse.d \

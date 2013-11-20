@@ -15,6 +15,7 @@ O_SRCS += \
 ../obj/extract-links.o \
 ../obj/fast-match.o \
 ../obj/idiom.o \
+../obj/link_test.o \
 ../obj/linkset.o \
 ../obj/massage.o \
 ../obj/parse.o \
