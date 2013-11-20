@@ -370,7 +370,6 @@ int main()
 
 			TransitiveClosure();
 
-
 			for (i = 0; i < word_count; i++)
 			{
 				//printf ( "%s\n", get_named_entity(linkage_get_word(linkage, i)));
@@ -379,38 +378,101 @@ int main()
 				{
 					int j;
 
-					for(j=0;j<MAX;j++)
+					for (j = 0; j < MAX; j++)
 					{
 						int valid = 0;
-						if(transGraph[i][j]!=-1)
+						if (transGraph[i][j] != -1)
 						{
 							int k;
-							for(k=0;k<MAX;k++)
+							for (k = 0; k < MAX; k++)
 							{
-								if(graph[j][k] == -1)
+								if (graph[j][k] == -1)
 									continue;
-								if(getLinkLabelFromValue(graph[j][k])[0] == 'S') //XXX: Ther might another link which starts with S
+								if (getLinkLabelFromValue(graph[j][k])[0]
+										== 'S') //XXX: Ther might another link which starts with S
 								{
 									valid = 1;
 									break;
 								}
 							}
-							if(valid)
+							if (valid)
 								break;
 						}
 					}
 					// j - is the required subject
 					//printf("%d\n",j);
-					printf("\nSUBJECT = %s\n", linkage_get_word(linkage,j));
+					printf("\nSUBJECT = %s\n", linkage_get_word(linkage, j));
+					int subject = j;
 
+					int k;
+					for (k = 0; k < MAX; k++)
+					{
+						if (graph[j][k] == -1)
+							continue;
+						if (getLinkLabelFromValue(graph[j][k])[0] == 'S') //XXX: Ther might another link which starts with S
+							break;
+					}
+					// k - is the required other end of subject link
+					printf("\nEND OF SUBJECT = %s\n",
+							linkage_get_word(linkage, k));
+
+					int endOfSubject = k;
+
+					k = 0;
+					while (k < MAX)
+					{
+						for (; k < MAX; k++)
+						{
+							if (graph[endOfSubject][k] == -1)
+								continue;
+							if (getLinkLabelFromValue(graph[endOfSubject][k])[0]
+									== 'M'
+									&& getLinkLabelFromValue(
+											graph[endOfSubject][k])[1] == 'V') //XXX:
+
+								break;
+						}
+						// k - is the required other end of subject link
+						if (k >= MAX)
+							break;
+
+						printf("\nPreposition = %s\n",
+								linkage_get_word(linkage, k));
+
+						int preposition = k;
+
+						int l;
+						// Required action on seeing a preposition
+						for (l = 0; l < MAX; l++)
+						{
+							if (graph[preposition][l] == -1)
+								continue;
+							if (getLinkLabelFromValue(graph[preposition][l])[0]
+									== 'J') //XXX:
+							{
+								char* objectOfPreposition = linkage_get_word(
+										linkage, l);
+								printf("%s\n", objectOfPreposition);
+								if (strcmp(
+										get_named_entity(objectOfPreposition),
+										"TIME") == 0)
+								{
+									printf(
+											"The corresponding time word is %s\n",
+											objectOfPreposition);
+									break;
+								}
+
+							}
+						}
+
+						k++;
+					}
 				}
 			}
 
 			//To identify the subject acting on the location, find a word such that the location is connected to that word
 			// and it has a right S link out of it.
-
-
-
 
 		} else
 		{
