@@ -25,6 +25,7 @@ int transGraph[MAX][MAX];
 
 int word_count = 0;
 int entity_count = 0;
+int num_relations = 0;
 
 /* Builkd the transitive closure of the gfraph
  *
@@ -203,13 +204,12 @@ void print_graph()
 			//-- This is true for the diagonal elements for sure, Maybe for others too
 			if (graph[i][j] == -1)
 			{
-				printf("%s;%s;%s ", "NULL", linkage_get_word(linkage, i),
-						linkage_get_word(linkage, j));
+				printf("%s;%s;%s ", "NULL", linkage_get_word(linkage, i), linkage_get_word(linkage, j));
 				continue;
 
 			}
-			printf("%s;%s;%s ", getLinkLabelFromValue(graph[i][j]),
-					linkage_get_word(linkage, i), linkage_get_word(linkage, j));
+			printf("%s;%s;%s ", getLinkLabelFromValue(graph[i][j]), linkage_get_word(linkage, i),
+					linkage_get_word(linkage, j));
 		}
 		printf("\n");
 	}
@@ -243,12 +243,19 @@ char* get_named_entity(char* word_orig)
 	return "O";
 }
 
+struct LocationTimeDependency
+{
+	char* location;
+	char* time;
+	char* subject;
+
+} relations[MAX];
+
 int main()
 {
 
 	opts = parse_options_create();
-	dict = dictionary_create("4.0.dict", "4.0.knowledge",
-			"4.0.constituent-knowledge", "4.0.affix");
+	dict = dictionary_create("4.0.dict", "4.0.knowledge", "4.0.constituent-knowledge", "4.0.affix");
 
 	initialize_graph();
 //while (1)
@@ -335,10 +342,8 @@ int main()
 			for (i = 0; i < link_count; i++)
 			{
 				char* link = linkage_get_link_label(linkage, i);
-				char* left_word = linkage_get_word(linkage,
-						linkage_get_link_lword(linkage, i));
-				char* right_word = linkage_get_word(linkage,
-						linkage_get_link_rword(linkage, i));
+				char* left_word = linkage_get_word(linkage, linkage_get_link_lword(linkage, i));
+				char* right_word = linkage_get_word(linkage, linkage_get_link_rword(linkage, i));
 
 				//-- We now assign a unique int to every link.
 				//-- Add it to the hashmap only if the link is not already present.
@@ -355,11 +360,9 @@ int main()
 				//-- This number is the index of the word and is small
 				//-- We will now add the corresponding link between the l and r words to our graph using:
 
-				graph[linkage_get_link_lword(linkage, i)][linkage_get_link_rword(
-						linkage, i)] = getLinkValue(link);
+				graph[linkage_get_link_lword(linkage, i)][linkage_get_link_rword(linkage, i)] = getLinkValue(link);
 
-				graph[linkage_get_link_rword(linkage, i)][linkage_get_link_lword(
-						linkage, i)] = getLinkValue(link);
+				graph[linkage_get_link_rword(linkage, i)][linkage_get_link_lword(linkage, i)] = getLinkValue(link);
 				//printf("%s;%s;%s\n", link, left_word, right_word);//, left_word, right_word);
 			}
 
@@ -367,14 +370,15 @@ int main()
 
 			//find the word which is NER tagged with location
 			// We will simply need the subject form of the word tagged with location
+			//To identify the subject acting on the location, find a word such that the location is connected to that word
+			// and it has a right S link out of it.
 
 			TransitiveClosure();
 
 			for (i = 0; i < word_count; i++)
 			{
 				//printf ( "%s\n", get_named_entity(linkage_get_word(linkage, i)));
-				if (strcmp("LOCATION",
-						get_named_entity(linkage_get_word(linkage, i))) == 0)
+				if (strcmp("LOCATION", get_named_entity(linkage_get_word(linkage, i))) == 0)
 				{
 					int j;
 
@@ -388,8 +392,7 @@ int main()
 							{
 								if (graph[j][k] == -1)
 									continue;
-								if (getLinkLabelFromValue(graph[j][k])[0]
-										== 'S') //XXX: Ther might another link which starts with S
+								if (getLinkLabelFromValue(graph[j][k])[0] == 'S') //XXX: Ther might another link which starts with S
 								{
 									valid = 1;
 									break;
@@ -413,8 +416,7 @@ int main()
 							break;
 					}
 					// k - is the required other end of subject link
-					printf("\nEND OF SUBJECT = %s\n",
-							linkage_get_word(linkage, k));
+					printf("\nEND OF SUBJECT = %s\n", linkage_get_word(linkage, k));
 
 					int endOfSubject = k;
 
@@ -425,10 +427,8 @@ int main()
 						{
 							if (graph[endOfSubject][k] == -1)
 								continue;
-							if (getLinkLabelFromValue(graph[endOfSubject][k])[0]
-									== 'M'
-									&& getLinkLabelFromValue(
-											graph[endOfSubject][k])[1] == 'V') //XXX:
+							if (getLinkLabelFromValue(graph[endOfSubject][k])[0] == 'M'
+									&& getLinkLabelFromValue(graph[endOfSubject][k])[1] == 'V') //XXX:
 
 								break;
 						}
@@ -436,8 +436,7 @@ int main()
 						if (k >= MAX)
 							break;
 
-						printf("\nPreposition = %s\n",
-								linkage_get_word(linkage, k));
+						printf("\nPreposition = %s\n", linkage_get_word(linkage, k));
 
 						int preposition = k;
 
@@ -447,19 +446,41 @@ int main()
 						{
 							if (graph[preposition][l] == -1)
 								continue;
-							if (getLinkLabelFromValue(graph[preposition][l])[0]
-									== 'J') //XXX:
+							if (getLinkLabelFromValue(graph[preposition][l])[0] == 'J') //XXX:
 							{
-								char* objectOfPreposition = linkage_get_word(
-										linkage, l);
+								char* objectOfPreposition = linkage_get_word(linkage, l);
 								printf("%s\n", objectOfPreposition);
-								if (strcmp(
-										get_named_entity(objectOfPreposition),
-										"TIME") == 0)
+								if (strcmp(get_named_entity(objectOfPreposition), "TIME") == 0)
 								{
-									printf(
-											"The corresponding time word is %s\n",
-											objectOfPreposition);
+
+									int tempLoop = l - 1;
+									while (tempLoop >= 0
+											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "TIME")
+													== 0)
+									{
+										tempLoop--;
+									}
+									char result[1024];
+									result[0] = '\0';
+
+									printf("Resuilt = %s\n", result);
+									tempLoop++;
+
+									while (tempLoop < word_count
+											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "TIME")
+													== 0)
+									{
+										strcat(result, linkage_get_word(linkage, tempLoop));
+										strcat(result, " ");
+										tempLoop++;
+									}
+									/*printf("Corresponding Time word is %s\n",
+									 result);*/
+
+									relations[num_relations].subject = linkage_get_word(linkage, subject);
+									relations[num_relations].location = linkage_get_word(linkage, i);
+									relations[num_relations].time = result;
+									num_relations++;
 									break;
 								}
 
@@ -469,11 +490,14 @@ int main()
 						k++;
 					}
 				}
+
+			} // End of outer loop
+
+			for (i = 0; i < num_relations; i++)
+			{
+				printf("LT_Relation(%s,%s,%s)\n", relations[i].subject, relations[i].location, relations[i].time);
+
 			}
-
-			//To identify the subject acting on the location, find a word such that the location is connected to that word
-			// and it has a right S link out of it.
-
 		} else
 		{
 			//printf ( "Unable to parse sentence\n" );
