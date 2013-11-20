@@ -1,5 +1,6 @@
 #include "link-includes.h"
 #include <string.h>
+#include <stdlib.h>
 #define THRESH 20
 #define MAX 100
 
@@ -10,10 +11,53 @@ Linkage linkage;
 CNode * cn;
 char * string;
 
+//-- This is the input string
+char input_string[1024 * 8];
+
+//-- Each row is a word. There can be atmost 100 words here.
+//-- The entities corresponding to the words in the above string.
+char words[MAX][1024];
+char entity_types[MAX][1024];
+
 int linklabel_counter = 0;
 int graph[MAX][MAX];
+int transGraph[MAX][MAX];
 
 int word_count = 0;
+int entity_count = 0;
+
+/* Builkd the transitive closure of the gfraph
+ *
+ */
+
+void TransitiveClosure()
+{
+	int i, j, k;
+	for (i = 0; i < MAX; i++)
+	{
+		for (j = 0; j < MAX; j++)
+			transGraph[i][j] = graph[i][j];
+
+	}
+
+	for (k = 0; k < MAX; k++)
+	{
+		for (i = 0; i < MAX; i++)
+		{
+			for (j = 0; j < MAX; j++)
+			{
+				if (transGraph[i][j] == -1)
+				{
+					if (transGraph[i][k] != -1 && transGraph[k][j] != -1)
+						transGraph[i][j] = 0; // JUst checking for connectivity
+				}
+			}
+
+		}
+
+	}
+
+}
 
 /* Print out the words at the leaves of the tree,
  bracketing constituents labeled "PP" */
@@ -60,14 +104,16 @@ int is_same_word(char* a, char* b)
 	char c[1024];
 	char d[1024];
 
-	for (i = 0; a[i]; i++)
+	for (i = 0; i < strlen(a); i++)
 	{
 		c[i] = tolower(a[i]);
 	}
-	for (i = 0; b[i]; i++)
+	c[i] = '\0';
+	for (i = 0; i < strlen(b); i++)
 	{
 		d[i] = tolower(b[i]);
 	}
+	d[i] = '\0';
 
 	if (strcmp(c, d) == 0)
 		return 1;
@@ -169,6 +215,34 @@ void print_graph()
 	}
 }
 
+//-- This functions given a word
+//-- if NE is defined, return the NE from entity array
+//-- else return O as default
+char* get_named_entity(char* word_orig)
+{
+	//-- word is something like this.p. Need to strip
+
+	char word[MAX];
+	strcpy(word, word_orig);
+	int i = strlen(word);
+	while (word[i] != '.' && i >= 0)
+		i--;
+	if (i != 0)
+		word[i] = '\0';
+
+	//printf("II = %d\n",entity_count);
+	for (i = 0; i < entity_count; i++)
+	{
+		//printf("WORDs = %s;%s\n",word,words[i]);
+		if (is_same_word(words[i], word) == 1)
+		{
+			//printf("WENT HERE");
+			return entity_types[i];
+		}
+	}
+	return "O";
+}
+
 int main()
 {
 
@@ -179,13 +253,6 @@ int main()
 	initialize_graph();
 //while (1)
 	{
-		//-- This is the input string
-		char input_string[1024 * 8];
-
-		//-- Each row is a word. There can be atmost 100 words here.
-		//-- The entities corresponding to the words in the above string.
-		char words[100][1024];
-		char entity_types[100][1024];
 
 		//-- We now read the input string character by character until the end of the sentence
 		int char_count = 0;
@@ -201,19 +268,23 @@ int main()
 			if (is_end_of_sentence(c))
 			{
 				input_string[char_count++] = c;
-				entity_types[word_count][entity_char_count++] = c;
+				//entity_types[word_count][entity_char_count++] = c;
+				entity_types[word_count][entity_char_count++] = '\0';
 				input_string[char_count] = '\0';
+				word_count++;
 				break;
 			} else
 			{
 				if (c == '/')
 				{
 					ner = 1;
+					words[word_count][word_char_count++] = '\0';
 					entity_char_count = 0;
 					continue;
 				}
 				if (c == ' ')
 				{
+					entity_types[word_count][entity_char_count++] = '\0';
 					input_string[char_count++] = c;
 					word_char_count = 0;
 					ner = 0;
@@ -245,6 +316,7 @@ int main()
 		{
 			linkage = linkage_create(0, sent, opts);
 			//-- Just setting this for usage later.
+			entity_count = word_count;
 			word_count = linkage_get_num_words(linkage);
 
 			printf("%s\n", string = linkage_print_diagram(linkage));
@@ -255,7 +327,7 @@ int main()
 			//printf("All links \n%s\n", linkage_print_links_and_domains(linkage));
 
 			int link_count = linkage_get_num_links(linkage);
-			printf("%d\n", link_count);
+			//printf("%d\n", link_count);
 			int i;
 			//-- Array of structures of word blocks
 			//word_block wb[]
@@ -286,9 +358,60 @@ int main()
 				graph[linkage_get_link_lword(linkage, i)][linkage_get_link_rword(
 						linkage, i)] = getLinkValue(link);
 
-				printf("%s;%s;%s\n", link, left_word, right_word);//, left_word, right_word);
+				graph[linkage_get_link_rword(linkage, i)][linkage_get_link_lword(
+						linkage, i)] = getLinkValue(link);
+				//printf("%s;%s;%s\n", link, left_word, right_word);//, left_word, right_word);
 			}
-			print_graph();
+
+			//print_graph();
+
+			//find the word which is NER tagged with location
+			// We will simply need the subject form of the word tagged with location
+
+			TransitiveClosure();
+
+
+			for (i = 0; i < word_count; i++)
+			{
+				//printf ( "%s\n", get_named_entity(linkage_get_word(linkage, i)));
+				if (strcmp("LOCATION",
+						get_named_entity(linkage_get_word(linkage, i))) == 0)
+				{
+					int j;
+
+					for(j=0;j<MAX;j++)
+					{
+						int valid = 0;
+						if(transGraph[i][j]!=-1)
+						{
+							int k;
+							for(k=0;k<MAX;k++)
+							{
+								if(graph[j][k] == -1)
+									continue;
+								if(getLinkLabelFromValue(graph[j][k])[0] == 'S') //XXX: Ther might another link which starts with S
+								{
+									valid = 1;
+									break;
+								}
+							}
+							if(valid)
+								break;
+						}
+					}
+					// j - is the required subject
+					//printf("%d\n",j);
+					printf("\nSUBJECT = %s\n", linkage_get_word(linkage,j));
+
+				}
+			}
+
+			//To identify the subject acting on the location, find a word such that the location is connected to that word
+			// and it has a right S link out of it.
+
+
+
+
 		} else
 		{
 			//printf ( "Unable to parse sentence\n" );
