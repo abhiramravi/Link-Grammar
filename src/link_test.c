@@ -388,9 +388,9 @@ int main()
 
 				printf("%s\n", string = linkage_print_diagram(linkage));
 				string_delete(string);
-				cn = linkage_constituent_tree(linkage);
-				print_words_with_prep_phrases_marked(cn);
-				linkage_free_constituent_tree(cn);
+				//cn = linkage_constituent_tree(linkage);
+				//print_words_with_prep_phrases_marked(cn);
+				//linkage_free_constituent_tree(cn);
 				//printf("All links \n%s\n", linkage_print_links_and_domains(linkage));
 
 				int link_count = linkage_get_num_links(linkage);
@@ -546,7 +546,7 @@ int main()
 								if (graph[current_word][k] == -1)
 									continue;
 								if (getLinkLabelFromValue(graph[current_word][k])[0] == 'M'
-										&& getLinkLabelFromValue(graph[current_word][k])[1] == 'V') //XXX:
+										&& getLinkLabelFromValue(graph[current_word][k])[1] == 'V'  && getLinkLabelFromValue(graph[current_word][k])[2] == 'p') //XXX:
 
 									break;
 							}
