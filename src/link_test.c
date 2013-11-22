@@ -1,3 +1,20 @@
+/*
+ *
+ *
+ *
+ *
+ *
+ *
+ * The party begins in California/LOCATION at 5/TIME AM/TIME.
+ * The party will happen in California/LOCATION at 5/TIME AM/TIME.
+ * The party will be happening in California/LOCATION at 5/TIME AM/TIME.
+ *
+ * We will be conducting the party in California/LOCATION at 5/TIME AM/TIME.
+ *
+ *
+ * */
+
+
 #include "link-includes.h"
 #include <string.h>
 #include <stdlib.h>
@@ -251,6 +268,25 @@ struct LocationTimeDependency
 
 } relations[MAX];
 
+/*
+ * These two functions take in an input word index, and finds if there
+ * is a link of the type link_type from it. If so, it returns
+ * the index of the linked word.
+ *
+ * */
+int isThereALink(int word_index, char link_type)
+{
+	int k;
+	for (k = 0; k < MAX; k++)
+	{
+		if (graph[word_index][k] == -1)
+			continue;
+		if (getLinkLabelFromValue(graph[word_index][k])[0] == link_type) //XXX: Ther might another link which starts with S
+			break;
+	}
+	return k;
+}
+
 int main()
 {
 
@@ -421,14 +457,57 @@ int main()
 					int endOfSubject = k;
 
 					k = 0;
+
+					int current_word = endOfSubject;
+					int i_state = 0;
+					int p_state = 0;
+
 					while (k < MAX)
 					{
+						//-- Backing up the value of k for our state machine's optinal states
+						int k_backup = k;
+
+						//-- Check for an optional I state
+						if (!i_state)
+						{
+							for (; k < MAX; k++)
+							{
+								if (graph[current_word][k] == -1)
+									continue;
+								if (getLinkLabelFromValue(graph[current_word][k])[0] == 'I') //XXX:
+								{
+									printf("State i found %s\n", linkage_get_word(linkage, k));
+									current_word = k;
+									i_state = 1;
+									break;
+								}
+							}
+
+							if (i_state)
+							{
+								for (; k < MAX; k++)
+								{
+									if (graph[current_word][k] == -1)
+										continue;
+									if (getLinkLabelFromValue(graph[current_word][k])[0] == 'P') //XXX:
+									{
+										printf("State p found %s\n", linkage_get_word(linkage, k));
+										current_word = k;
+										p_state = 1;
+										continue;
+									}
+								}
+							}
+
+							if ( k >= MAX )
+								k = k_backup;
+						}
 						for (; k < MAX; k++)
 						{
-							if (graph[endOfSubject][k] == -1)
+							if (graph[current_word][k] == -1)
 								continue;
-							if (getLinkLabelFromValue(graph[endOfSubject][k])[0] == 'M'
-									&& getLinkLabelFromValue(graph[endOfSubject][k])[1] == 'V') //XXX:
+							if (getLinkLabelFromValue(graph[current_word][k])[0] == 'M'
+									&& getLinkLabelFromValue(graph[current_word][k])[1] == 'V') //XXX:
 
 								break;
 						}
@@ -463,7 +542,7 @@ int main()
 									char result[1024];
 									result[0] = '\0';
 
-									printf("Resuilt = %s\n", result);
+									printf("Result = %s\n", result);
 									tempLoop++;
 
 									while (tempLoop < word_count
