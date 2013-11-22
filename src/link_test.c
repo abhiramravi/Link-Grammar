@@ -8,12 +8,12 @@
  * The party begins in California/LOCATION at 5/TIME AM/TIME.
  * The party will happen in California/LOCATION at 5/TIME AM/TIME.
  * The party will be happening in California/LOCATION at 5/TIME AM/TIME.
+ * We conduct the party in California/LOCATION on Fridays/TIME.
  *
- * We will be conducting the party in California/LOCATION at 5/TIME AM/TIME.
+ *
  *
  *
  * */
-
 
 #include "link-includes.h"
 #include <string.h>
@@ -351,7 +351,7 @@ int main()
 		char* c1 = "This";
 		char* c2 = "this";
 		printf("%s\n", input_string);
-		printf("%d\n", is_same_word(c1, c2));
+		//printf("%d\n", is_same_word(c1, c2));
 		fflush(stdout);
 
 		sent = sentence_create(input_string, dict);
@@ -499,9 +499,23 @@ int main()
 								}
 							}
 
-							if ( k >= MAX )
+							if (k >= MAX)
 								k = k_backup;
 						}
+						k_backup = k;
+						for (; k < MAX; k++)
+						{
+							if (graph[current_word][k] == -1)
+								continue;
+							if (getLinkLabelFromValue(graph[current_word][k])[0] == 'O')
+							{
+								//-- Update the item/event of interest.
+								subject = k;
+								break;
+							}
+						}
+						k = k_backup;
+
 						for (; k < MAX; k++)
 						{
 							if (graph[current_word][k] == -1)
@@ -565,7 +579,7 @@ int main()
 
 							}
 						}
-
+						//-- We can safely do this because links never cross.
 						k++;
 					}
 				}
