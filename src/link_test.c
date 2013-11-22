@@ -9,7 +9,7 @@
  * The party will happen in California/LOCATION at 5/TIME AM/TIME.
  * The party will be happening in California/LOCATION at 5/TIME AM/TIME.
  * We conduct the party in California/LOCATION on Fridays/TIME.
- *
+ * We will be conducting the party in California/LOCATION on Fridays/TIME.
  *
  *
  *
@@ -414,7 +414,7 @@ int main()
 			for (i = 0; i < word_count; i++)
 			{
 				//printf ( "%s\n", get_named_entity(linkage_get_word(linkage, i)));
-				if (strcmp("LOCATION", get_named_entity(linkage_get_word(linkage, i))) == 0)
+				if (strcmp("location", get_named_entity(linkage_get_word(linkage, i))) == 0)
 				{
 					int j;
 
@@ -440,7 +440,7 @@ int main()
 					}
 					// j - is the required subject
 					//printf("%d\n",j);
-					printf("\nSUBJECT = %s\n", linkage_get_word(linkage, j));
+					//printf("\nSUBJECT = %s\n", linkage_get_word(linkage, j));
 					int subject = j;
 
 					int k;
@@ -452,7 +452,7 @@ int main()
 							break;
 					}
 					// k - is the required other end of subject link
-					printf("\nEND OF SUBJECT = %s\n", linkage_get_word(linkage, k));
+					//printf("\nEND OF SUBJECT = %s\n", linkage_get_word(linkage, k));
 
 					int endOfSubject = k;
 
@@ -476,28 +476,29 @@ int main()
 									continue;
 								if (getLinkLabelFromValue(graph[current_word][k])[0] == 'I') //XXX:
 								{
-									printf("State i found %s\n", linkage_get_word(linkage, k));
+									//printf("State i found %s\n", linkage_get_word(linkage, k));
 									current_word = k;
 									i_state = 1;
 									break;
 								}
 							}
-
-							if (i_state)
-							{
+							if ( k >= MAX )
+								k = k_backup;
+							//if (i_state)
+							//{
 								for (; k < MAX; k++)
 								{
 									if (graph[current_word][k] == -1)
 										continue;
 									if (getLinkLabelFromValue(graph[current_word][k])[0] == 'P') //XXX:
 									{
-										printf("State p found %s\n", linkage_get_word(linkage, k));
+										//printf("State p found %s\n", linkage_get_word(linkage, k));
 										current_word = k;
 										p_state = 1;
 										continue;
 									}
 								}
-							}
+							//}
 
 							if (k >= MAX)
 								k = k_backup;
@@ -529,7 +530,7 @@ int main()
 						if (k >= MAX)
 							break;
 
-						printf("\nPreposition = %s\n", linkage_get_word(linkage, k));
+						//printf("\nPreposition = %s\n", linkage_get_word(linkage, k));
 
 						int preposition = k;
 
@@ -543,12 +544,12 @@ int main()
 							{
 								char* objectOfPreposition = linkage_get_word(linkage, l);
 								printf("%s\n", objectOfPreposition);
-								if (strcmp(get_named_entity(objectOfPreposition), "TIME") == 0)
+								if (strcmp(get_named_entity(objectOfPreposition), "time") == 0)
 								{
 
 									int tempLoop = l - 1;
 									while (tempLoop >= 0
-											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "TIME")
+											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "time")
 													== 0)
 									{
 										tempLoop--;
@@ -560,7 +561,7 @@ int main()
 									tempLoop++;
 
 									while (tempLoop < word_count
-											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "TIME")
+											&& strcmp(get_named_entity(linkage_get_word(linkage, tempLoop)), "time")
 													== 0)
 									{
 										strcat(result, linkage_get_word(linkage, tempLoop));
